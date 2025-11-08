@@ -18,8 +18,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#model_loader.index()
-#indexRoute.load_routes(app)
+model_loader.index()
+indexRoute.load_routes(app)
 
 
 if __name__ == "__main__":
