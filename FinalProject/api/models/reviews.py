@@ -14,5 +14,5 @@ class Review(Base):
     review_text = Column(String(1000))
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    customer = relationship("Customer", back_populates="reviews")
-    menu_item = relationship("MenuItem", back_populates="reviews")
+    #customer = relationship("Customer", back_populates="reviews")
+    #menu_item = relationship("MenuItem", back_populates="reviews")

@@ -17,4 +17,4 @@ class Payment(Base):
     transaction_reference = Column(String(120))
     paid_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    order = relationship("Order", back_populates="payment")
+    #order = relationship("Order", back_populates="payment")

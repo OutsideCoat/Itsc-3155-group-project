@@ -1,16 +1,61 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Response, Depends
-from ..models import order_details as model
 from sqlalchemy.exc import SQLAlchemyError
+
+from ..models import order_details as model
+from ..models import recipes as recipe_model
+from ..models import resources as resource_model
 
 
 def create(db: Session, request):
+    required_by_resource: dict[int, int] = {}
+    recipes = (
+        db.query(recipe_model.Recipe)
+        .filter(recipe_model.Recipe.menu_item_id == request.menu_item_id)
+        .all()
+    )
+    for recipe in recipes:
+        needed = recipe.amount * request.amount
+        required_by_resource[recipe.resource_id] = (
+            required_by_resource.get(recipe.resource_id, 0) + needed
+        )
+    shortages = []
+    for resource_id, required_amount in required_by_resource.items():
+        resource = (
+            db.query(resource_model.Resource)
+            .filter(resource_model.Resource.id == resource_id)
+            .first()
+        )
+        if resource is None:
+            shortages.append({"resource_id": resource_id, "message": "Resource not found"})
+            continue
+        if resource.amount < needed:
+            shortages.append(
+                {
+                    "resource_id": resource_id.as_integer_ratio,
+                    "name": getattr(resource, "name", None),
+                    "needed": needed,
+                    "available": resource.amount
+                }
+            )
+    if shortages:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": "Insufficient resources", "shortages": shortages}
+        )
+    for resource_id, needed in required_by_resource.items():
+        resource = (
+            db.query(resource_model.Resource).filter(resource_model.Resource.id == resource_id).with_for_update().first()
+
+        )
+        resource.amount -= needed
+
     new_item = model.OrderDetail(
         order_id=request.order_id,
-        sandwich_id=request.sandwich_id,
+        menu_item_id=request.menu_item_id,
         amount=request.amount
     )
-
     try:
         db.add(new_item)
         db.commit()
@@ -18,9 +63,8 @@ def create(db: Session, request):
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-
     return new_item
-
+        
 
 def read_all(db: Session):
     try:

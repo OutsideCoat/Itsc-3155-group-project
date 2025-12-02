@@ -9,5 +9,5 @@ class Sandwich(Base):
     sandwich_name = Column(String(100), unique=True, index=True, nullable=False)
     price = Column(DECIMAL(4, 2), nullable=False, server_default="0.00")
 
-    order_details = relationship("OrderDetail", back_populates="sandwich")
-    recipes = relationship("Recipe", back_populates="sandwich")
+    # order_details = relationship("OrderDetail", back_populates="sandwich")
+    # recipes = relationship("Recipe", back_populates="sandwich")

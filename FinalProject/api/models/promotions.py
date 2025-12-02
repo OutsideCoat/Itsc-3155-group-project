@@ -12,4 +12,4 @@ class Promotion(Base):
     discount_percent = Column(DECIMAL(5, 2), nullable=False, server_default='0.0')
     expires_at = Column(DateTime, nullable=False)
 
-    orders = relationship("Order", back_populates="promotion")
+    #orders = relationship("Order", back_populates="promotion")
