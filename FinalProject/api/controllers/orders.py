@@ -5,8 +5,11 @@ from ..models import promotions as promo_model
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, date
 import uuid
+from ..schemas import orders as order_schema
+from .. import models as model
 
 ALLOWED_STATUSES = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Preparing"}
+
 
 
 

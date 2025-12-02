@@ -25,6 +25,7 @@ class OrderBase(BaseModel):
     tracking_number: Optional[str] = None
     status: Optional[OrderStatus] = OrderStatus.pending
     total_price: Decimal = Decimal("0.0")
+    order_type: Optional[str] = "takeout"
 
 
 class OrderCreate(BaseModel):
@@ -42,6 +43,7 @@ class OrderUpdate(BaseModel):
     status: Optional[OrderStatus] = None
     total_price: Optional[Decimal] = None
     promo_code: Optional[str] = None
+    order_type: Optional[str] = None
 
 
 class Order(OrderBase):
@@ -55,6 +57,7 @@ class Order(OrderBase):
     promotion: Optional[Promotion] = None
     payment: Optional[Payment] = None
     order_details: list[OrderDetail] = None
+    order_type: str
     
 
     class ConfigDict:
