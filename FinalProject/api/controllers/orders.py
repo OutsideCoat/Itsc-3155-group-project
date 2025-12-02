@@ -6,7 +6,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, date
 import uuid
 from ..schemas import orders as order_schema
-from .. import models as model
 
 ALLOWED_STATUSES = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Preparing"}
 
@@ -35,17 +34,16 @@ def create(db: Session, request):
         promo_id = promo.id
     
     tracking_number = str(uuid.uuid4()).replace("-", "")[:10]
-
-            
-
-
+    order_type = getattr(request, "order_type", None) or "takeout"
 
     new_item = model.Order(
         customer_name=request.customer_name,
         description=request.description,
         promotion_id=promo_id,
         status="Pending",
-        tracking_number=tracking_number
+        tracking_number=tracking_number,
+        order_type=order_type
+
     )
 
     try:
@@ -73,7 +71,7 @@ def read_one(db: Session, status: str | None = None, start_date: date | None = N
         query = db.query(model.Order)
 
         if status:
-            query.query.filter(model.Order.status == status)
+            query = query.filter(model.Order.status == status)
         if start_date:
             start_dt = datetime.combine(start_date, datetime.min.time())
             query = query.filter(model.Order.order_date >= start_dt)

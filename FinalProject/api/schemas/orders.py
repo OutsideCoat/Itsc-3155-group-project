@@ -32,6 +32,7 @@ class OrderCreate(BaseModel):
     customer_name: str
     description: str | None  = None
     promo_code: str | None = None
+    order_type: str | None = "takeout"
 
 
 class OrderUpdate(BaseModel):
