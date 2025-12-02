@@ -47,10 +47,18 @@ class OrderUpdate(BaseModel):
 class Order(OrderBase):
     id: int
     order_date: Optional[datetime] = None
+
+    status: str
+    tracking_number: Optional[str] = None
+
     customer: Optional[Customer] = None
     promotion: Optional[Promotion] = None
     payment: Optional[Payment] = None
-    order_details: list[OrderDetail] = Field(default_factory=list)
+    order_details: list[OrderDetail] = None
+    
 
     class ConfigDict:
         from_attributes = True
+
+class OrderStatusUpdate(BaseModel):
+    status: str

@@ -4,9 +4,15 @@ from ..models import orders as model
 from ..models import promotions as promo_model
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
+import uuid
+
+ALLOWED_STATUSES = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Preparing"}
+
 
 
 def create(db: Session, request):
+    promo_id = None
+
     if getattr(request, "promo_code", None):
         promo = (
             db.query(promo_model.Promotion)
@@ -23,13 +29,20 @@ def create(db: Session, request):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Promotion code has expired!"
             )
+        promo_id = promo.id
+    
+    tracking_number = str(uuid.uuid4()).replace("-", "")[:10]
+
             
 
 
 
     new_item = model.Order(
         customer_name=request.customer_name,
-        description=request.description
+        description=request.description,
+        promotion_id=promo_id,
+        status="Pending",
+        tracking_number=tracking_number
     )
 
     try:
@@ -62,6 +75,16 @@ def read_one(db: Session, item_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     return item
 
+def read_by_tracking_number(db: Session, tracking_number: str):
+    try:
+        item = db.query(model.Order).filter(model.Order.tracking_number == tracking_number).first()
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tracking number not found!")
+    except SQLAlchemyError as e:
+        error = str(e.__dict__['orig'])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    return item
+
 
 def update(db: Session, item_id, request):
     try:
@@ -70,6 +93,23 @@ def update(db: Session, item_id, request):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id not found!")
         update_data = request.dict(exclude_unset=True)
         item.update(update_data, synchronize_session=False)
+        db.commit()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__['orig'])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    return item.first()
+
+def update_status(db: Session, item_id: int, new_status: str):
+    if new_status not in ALLOWED_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Allowed statuses are: {', '.join(ALLOWED_STATUSES)}"
+        )
+    try:
+        item = db.query(model.Order).filter(model.Order.id == item_id)
+        if not item.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id not found!")
+        item.update({"status": new_status}, synchronize_session=False)
         db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
