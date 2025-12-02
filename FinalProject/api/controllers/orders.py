@@ -3,7 +3,7 @@ from fastapi import HTTPException, status, Response, Depends
 from ..models import orders as model
 from ..models import promotions as promo_model
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
+from datetime import datetime, date
 import uuid
 
 ALLOWED_STATUSES = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Preparing"}
@@ -65,15 +65,24 @@ def read_all(db: Session):
     return result
 
 
-def read_one(db: Session, item_id):
+def read_one(db: Session, status: str | None = None, start_date: date | None = None, end_date: date | None = None ):
     try:
-        item = db.query(model.Order).filter(model.Order.id == item_id).first()
-        if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id not found!")
+        query = db.query(model.Order)
+
+        if status:
+            query.query.filter(model.Order.status == status)
+        if start_date:
+            start_dt = datetime.combine(start_date, datetime.min.time())
+            query = query.filter(model.Order.order_date >= start_dt)
+        if end_date:
+            end_dt = datetime.combine(end_date, datetime.max.time())
+            query = query.filter(model.Order.order_date <= end_date)
+        return query.all()
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    return item
+    
+    
 
 def read_by_tracking_number(db: Session, tracking_number: str):
     try:

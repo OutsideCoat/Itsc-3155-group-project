@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from ..controllers import orders as controller
 from ..schemas import orders as schema
 from ..dependencies.database import engine, get_db
+from datetime import datetime, date
 
 router = APIRouter(
     tags=['Orders'],
@@ -23,6 +24,16 @@ def read_all(db: Session = Depends(get_db)):
 @router.get("/{item_id}", response_model=schema.Order)
 def read_one(item_id: int, db: Session = Depends(get_db)):
     return controller.read_one(db, item_id=item_id)
+
+@router.get("/", response_model=list[schema.Order])
+def get_orders(
+    start_date: date | None = None,
+    end_date: date | None = None,
+    status: str | None = None,
+    db: Session = Depends(get_db)
+):
+    return controller.read_filtered(db=db, start_date=start_date, end_date=end_date, status=status)
+ 
 
 @router.get("/tracking/{tracking_number}", response_model=schema.Order)
 def track_order(tracking_number: str, db: Session = Depends(get_db)):
