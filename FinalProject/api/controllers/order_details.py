@@ -14,7 +14,7 @@ def create(db: Session, request):
     required_by_resource: dict[int, int] = {}
     recipes = (
         db.query(recipe_model.Recipe)
-        .filter(recipe_model.Recipe.menu_item_id == request.menu_item_id)
+        .filter(recipe_model.Recipe.sandwich_id == request.sandwich_id)
         .all()
     )
     for recipe in recipes:
@@ -56,7 +56,7 @@ def create(db: Session, request):
 
     new_item = model.OrderDetail(
         order_id=request.order_id,
-        menu_item_id=request.menu_item_id,
+        sandwich_id=request.sandwich_id,
         amount=request.amount
     )
     try:
@@ -84,7 +84,7 @@ def create(db: Session, request):
         for detail in details:
             sandwich = (
                 db.query(sandwich_model.Sandwich)
-                .filter(sandwich_model.Sandwich.id == detail.menu_item_id)
+                .filter(sandwich_model.Sandwich.id == detail.sandwich_id)
                 .first()
             )
             if sandwich:
