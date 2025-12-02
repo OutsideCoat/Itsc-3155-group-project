@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from ..dependencies.database import get_db
 from ..controllers import reports as controller
+from ..schemas import reports as report_schema
 
 router = APIRouter(
     prefix="/reports",
@@ -13,7 +14,7 @@ router = APIRouter(
 def get_daily_revenue(target_date: date, db: Session = Depends(get_db)):
     return controller.get_daily_revenue(db, target_date)
 
-@router.get("/dish-popularity/", response_model=list)
+@router.get("/dish-popularity/", response_model=report_schema.DishPopularityResponse)
 def get_dish_popularity(
     start_date: date,
     end_date: date,
