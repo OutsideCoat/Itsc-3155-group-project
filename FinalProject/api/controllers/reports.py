@@ -6,6 +6,10 @@ from sqlalchemy import func
 from ..models import orders as model
 from ..models import order_details as order_detail_model
 from ..models import sandwiches as sandwich_model
+from ..models import menu_items as menu_model
+from ..models import reviews as review_model
+from ..schemas import reports as report_model  
+
 
 def get_daily_revenue(db: Session, target_date: date):
     try:
@@ -85,3 +89,44 @@ def get_dish_popularity(db: Session, start_date: date, end_date: date, limit: in
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    
+def get_review_trends(db: Session, min_reviews: int = 1, limit: int = 10) -> list[report_model.ReviewTrend]:
+    try:
+        query = (
+            db.query(
+                menu_model.MenuItem.id.label("menu_item_id"),
+                menu_model.MenuItem.name.label("menu_item_name"),
+                func.avg(review_model.Review.rating).label("average_rating"),
+                func.count(review_model.Review.id).label("review_count"),
+                func.max(review_model.Review.created_at).label("last_review_date")
+            )
+            .join(
+                review_model.Review, 
+                review_model.Review.menu_item_id == menu_model.MenuItem.id
+            )
+            .group_by(
+                menu_model.MenuItem.id,
+                menu_model.MenuItem.name
+            )
+            .having(func.count(review_model.Review.id) >= min_reviews)
+            .order_by(func.avg(review_model.Review.rating).desc())
+            .limit(limit)
+        )
+
+        rows = query.all()
+
+        return [
+            report_model.ReviewTrend(
+                menu_item_id=row.menu_item_id,
+                menu_item_name=row.menu_item_name,
+                average_rating=float(row.average_rating),
+                review_count=row.review_count,
+                last_review_date=row.last_review_date
+            )
+            for row in rows
+        ]
+    except SQLAlchemyError as e:
+        error = str(e.__dict__['orig'])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    
