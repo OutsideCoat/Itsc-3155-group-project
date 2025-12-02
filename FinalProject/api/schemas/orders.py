@@ -28,7 +28,9 @@ class OrderBase(BaseModel):
 
 
 class OrderCreate(OrderBase):
-    pass
+    customer_name: str
+    description: str | None  = None
+    promo_code: str | None = None
 
 
 class OrderUpdate(BaseModel):

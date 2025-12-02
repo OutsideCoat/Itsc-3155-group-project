@@ -16,6 +16,7 @@ class Order(Base):
     total_price = Column(DECIMAL(10, 2), nullable=False, server_default='0.0')
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     promotion_id = Column(Integer, ForeignKey("promotions.id"), nullable=True)
+    #discount_percent = Column(DECIMAL(5, 2), nullable=True, server_default='0.0')
 
     #order_details = relationship("OrderDetail", back_populates="order")
     #payment = relationship("Payment", back_populates="order", uselist=False)
