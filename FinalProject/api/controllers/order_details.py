@@ -5,6 +5,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..models import order_details as model
 from ..models import recipes as recipe_model
 from ..models import resources as resource_model
+from ..models import sandwiches as sandwich_model
+from ..models import orders as order_model
+from ..models import promotions as promo_model
 
 
 def create(db: Session, request):
@@ -63,6 +66,50 @@ def create(db: Session, request):
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    try:
+        order = (
+            db.query(order_model.Order)
+            .filter(order_model.Order.id == request.order_id)
+            .first()
+        )
+        if not order:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order Id not found!")
+        
+        details = (
+            db.query(model.OrderDetail)
+            .filter(model.OrderDetail.order_id == request.order_id)
+            .all()
+        )
+        subtotal = 0
+        for detail in details:
+            sandwich = (
+                db.query(sandwich_model.Sandwich)
+                .filter(sandwich_model.Sandwich.id == detail.menu_item_id)
+                .first()
+            )
+            if sandwich:
+                subtotal += float(sandwich.price * detail.amount)
+        discount_percent = 0.0
+
+        if getattr(order, "promotion_id", None):
+            promotion = (
+                db.query(promo_model.Promotion)
+                .filter(promo_model.Promotion.id == order.promotion_id)
+                .first()
+            )
+            if promotion:
+                discount_percent = float(promotion.discount_percent)
+
+        final_total = subtotal * (1 - discount_percent / 100)
+        order.total_price = final_total
+        db.commit()
+
+    except SQLAlchemyError as e:
+        error = str(e.__dict__['orig'])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+
+
     return new_item
         
 

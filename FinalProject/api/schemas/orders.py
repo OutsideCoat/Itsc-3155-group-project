@@ -27,7 +27,7 @@ class OrderBase(BaseModel):
     total_price: Decimal = Decimal("0.0")
 
 
-class OrderCreate(OrderBase):
+class OrderCreate(BaseModel):
     customer_name: str
     description: str | None  = None
     promo_code: str | None = None
@@ -41,6 +41,7 @@ class OrderUpdate(BaseModel):
     tracking_number: Optional[str] = None
     status: Optional[OrderStatus] = None
     total_price: Optional[Decimal] = None
+    promo_code: Optional[str] = None
 
 
 class Order(OrderBase):
