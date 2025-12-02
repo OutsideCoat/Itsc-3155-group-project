@@ -5,6 +5,85 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..models import menu_items as model
 
 
+def create(db: Session, request):
+    # Prevent duplicate names
+    existing = db.query(model.MenuItem).filter(model.MenuItem.name == request.name).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Menu item with that name already exists.",
+        )
+    new_item = model.MenuItem(
+        name=request.name,
+        description=request.description,
+        category=request.category,
+        price=request.price,
+        is_vegetarian=request.is_vegetarian,
+        is_vegan=request.is_vegan,
+        is_gluten_free=request.is_gluten_free,
+        is_available=request.is_available,
+    )
+    try:
+        db.add(new_item)
+        db.commit()
+        db.refresh(new_item)
+        return new_item
+    except SQLAlchemyError as e:
+        db.rollback()
+        error = str(e.__dict__["orig"])
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error,
+        )
+
+def update(db: Session, item_id: int, request):
+    try:
+        item = db.query(model.MenuItem).filter(model.MenuItem.id == item_id)
+        current = item.first()
+        if not current:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Menu item not found.")
+
+        update_data = request.dict(exclude_unset=True)
+
+        # If changing the name, ensure uniqueness
+        new_name = update_data.get("name")
+        if new_name and new_name != current.name:
+            exists = db.query(model.MenuItem).filter(model.MenuItem.name == new_name).first()
+            if exists:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Menu item with that name already exists.",
+                )
+
+        item.update(update_data, synchronize_session=False)
+        db.commit()
+        return item.first()
+    except SQLAlchemyError as e:
+        db.rollback()
+        error = str(e.__dict__["orig"])
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error,
+        )
+
+
+def delete(db: Session, item_id: int):
+    try:
+        item = db.query(model.MenuItem).filter(model.MenuItem.id == item_id).first()
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Menu item not found.")
+        db.delete(item)
+        db.commit()
+        return {"message": "Menu item deleted"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        error = str(e.__dict__["orig"])
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error,
+        )
+
+
 def read_filtered(
     db: Session,
     search: str | None = None,

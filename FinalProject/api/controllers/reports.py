@@ -5,7 +5,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from ..models import orders as model
 from ..models import order_details as order_detail_model
-from ..models import sandwiches as sandwich_model
 from ..models import menu_items as menu_model
 from ..models import reviews as review_model
 from ..schemas import reports as report_model  
@@ -48,17 +47,17 @@ def get_dish_popularity(db: Session, start_date: date, end_date: date, limit: in
         
         base_query = (
             db.query(
-                sandwich_model.Sandwich.id.label("sandwich_id"),
-                sandwich_model.Sandwich.sandwich_name.label("sandwich_name"),
+                menu_model.MenuItem.id.label("menu_item_id"),
+                menu_model.MenuItem.name.label("menu_item_name"),
                 func.sum(order_detail_model.OrderDetail.amount).label("total_ordered")
             )
             .join(
                 order_detail_model.OrderDetail,
-                order_detail_model.OrderDetail.sandwich_id == sandwich_model.Sandwich.id
+                order_detail_model.OrderDetail.menu_item_id == menu_model.MenuItem.id
             )
             .group_by(
-                sandwich_model.Sandwich.id,
-                sandwich_model.Sandwich.sandwich_name
+                menu_model.MenuItem.id,
+                menu_model.MenuItem.name
             )
             
         )
@@ -77,8 +76,8 @@ def get_dish_popularity(db: Session, start_date: date, end_date: date, limit: in
 
         def row_to_dict(row):
             return {
-                "sandwich_id": row.sandwich_id,
-                "sandwich_name": row.sandwich_name,
+                "menu_item_id": row.menu_item_id,
+                "menu_item_name": row.menu_item_name,
                 "total_ordered": int(row.total_ordered)
             }
         

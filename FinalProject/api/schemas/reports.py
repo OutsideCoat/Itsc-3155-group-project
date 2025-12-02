@@ -5,8 +5,8 @@ from decimal import Decimal
 from datetime import datetime, date
 
 class DishStatistics(BaseModel):
-    sandwich_id: int
-    sandwich_name: str
+    menu_item_id: int
+    menu_item_name: str
     total_ordered: int
 
 class DishPopularityResponse(BaseModel):

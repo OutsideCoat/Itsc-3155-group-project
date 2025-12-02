@@ -1,16 +1,38 @@
-from fastapi.testclient import TestClient
 from ..controllers import orders as controller
-from ..main import app
 import pytest
 from ..models import orders as model
 
-# Create a test client for the app
-client = TestClient(app)
-
-
 @pytest.fixture
-def db_session(mocker):
-    return mocker.Mock()
+def db_session():
+    class _FakeQuery:
+        def __init__(self, result=None):
+            self._result = result
+
+        def filter(self, *args, **kwargs):
+            return self
+
+        def first(self):
+            return self._result
+
+    class _FakeSession:
+        def __init__(self, promo=None):
+            self._query = _FakeQuery(promo)
+            self.added = []
+            self.committed = False
+
+        def query(self, *_args, **_kwargs):
+            return self._query
+
+        def add(self, obj):
+            self.added.append(obj)
+
+        def commit(self):
+            self.committed = True
+
+        def refresh(self, _obj):
+            return None
+
+    return _FakeSession()
 
 
 def test_create_order(db_session):

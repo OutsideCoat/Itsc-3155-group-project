@@ -21,11 +21,7 @@ def read_all(db: Session = Depends(get_db)):
     return controller.read_all(db)
 
 
-@router.get("/{item_id}", response_model=schema.Order)
-def read_one(item_id: int, db: Session = Depends(get_db)):
-    return controller.read_one(db, item_id=item_id)
-
-@router.get("/", response_model=list[schema.Order])
+@router.get("/filter", response_model=list[schema.Order])
 def get_orders(
     start_date: date | None = None,
     end_date: date | None = None,
@@ -33,6 +29,11 @@ def get_orders(
     db: Session = Depends(get_db)
 ):
     return controller.read_filtered(db=db, start_date=start_date, end_date=end_date, status=status)
+
+
+@router.get("/{item_id}", response_model=schema.Order)
+def read_one(item_id: int, db: Session = Depends(get_db)):
+    return controller.read_one(db, item_id=item_id)
  
 
 @router.get("/tracking/{tracking_number}", response_model=schema.Order)

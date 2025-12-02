@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..models import order_details as model
 from ..models import recipes as recipe_model
 from ..models import resources as resource_model
-from ..models import sandwiches as sandwich_model
+from ..models import menu_items as menu_model
 from ..models import orders as order_model
 from ..models import promotions as promo_model
 
@@ -14,7 +14,7 @@ def create(db: Session, request):
     required_by_resource: dict[int, int] = {}
     recipes = (
         db.query(recipe_model.Recipe)
-        .filter(recipe_model.Recipe.sandwich_id == request.sandwich_id)
+        .filter(recipe_model.Recipe.menu_item_id == request.menu_item_id)
         .all()
     )
     for recipe in recipes:
@@ -32,13 +32,13 @@ def create(db: Session, request):
         if resource is None:
             shortages.append({"resource_id": resource_id, "message": "Resource not found"})
             continue
-        if resource.amount < needed:
+        if resource.amount < required_amount:
             shortages.append(
                 {
-                    "resource_id": resource_id.as_integer_ratio,
-                    "name": getattr(resource, "name", None),
-                    "needed": needed,
-                    "available": resource.amount
+                    "resource_id": resource_id,
+                    "item": getattr(resource, "item", None),
+                    "needed": float(required_amount),
+                    "available": float(resource.amount)
                 }
             )
     if shortages:
@@ -56,7 +56,7 @@ def create(db: Session, request):
 
     new_item = model.OrderDetail(
         order_id=request.order_id,
-        sandwich_id=request.sandwich_id,
+        menu_item_id=request.menu_item_id,
         amount=request.amount
     )
     try:
@@ -82,13 +82,13 @@ def create(db: Session, request):
         )
         subtotal = 0
         for detail in details:
-            sandwich = (
-                db.query(sandwich_model.Sandwich)
-                .filter(sandwich_model.Sandwich.id == detail.sandwich_id)
+            menu_item = (
+                db.query(menu_model.MenuItem)
+                .filter(menu_model.MenuItem.id == detail.menu_item_id)
                 .first()
             )
-            if sandwich:
-                subtotal += float(sandwich.price * detail.amount)
+            if menu_item:
+                subtotal += float(menu_item.price * detail.amount)
         discount_percent = 0.0
 
         if getattr(order, "promotion_id", None):
