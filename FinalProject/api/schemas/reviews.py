@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field
 
 
 class ReviewBase(BaseModel):
-    customer_id: int
+    customer_name: Optional[str] = None
     menu_item_id: int
     rating: int = Field(ge=1, le=5)
-    review_text: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class ReviewCreate(ReviewBase):
