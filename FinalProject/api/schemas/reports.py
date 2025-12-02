@@ -10,3 +10,5 @@ class DishPopularityResponse(BaseModel):
     most_ordered: List[DishStatistics]
     least_ordered: List[DishStatistics]
 
+
+
